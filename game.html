@@ -1,18 +1,154 @@
+<!DOCTYPE html>
 <html>
 <head>
     <title>TITLE</title>
-    <script src ="./js/jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script src ="./js/jquery-2.1.1.min.js"
+            type="text/javascript"></script>
+    <style type="text/css">
+    a {
+        text-decoration: none;
+    }
+    a:visited {
+        color: #000;
+    }
+    a:hover {
+        color: #0000ff;
+    }
+    </style>
 </head>
 <body>
 
-<a id="increment">Increment</a>
+<div id="content">
+
+    <p>
+        <span id="greeting">Hello <span id="name"></span>.</span>
+        You are a <span id="form"></span>.
+    </p>
+    <p>What do you do?</p>
+    <ul id="choices"></ul>
+    <p>Karma <span id="karma"></span></p>
+    <p>Life <span id="life"></span></p>
+
+</div>
 
 <script type="text/javascript">
-    var count = 0;
-    $('#increment').click(function (e) {
-        count++;
-        console.log(count);
-    })
+
+function Form() {    
+}
+
+function Cell() {
+    this.name = "Cell"
+    this.life = 10;
+    this.choices = [
+        makeChoice("Eat vegetation",1, -1),
+        makeChoice("Eat other cell", -1, -1)
+    ]
+}
+
+function Plant() {
+    this.name = "Plant"
+    this.life = 20
+    this.choices = [
+        makeChoice("Produce oxygen", 2, -1),
+        makeChoice("Produce neurotoxin",-5, -1)
+    ]
+}
+
+function Player(name) {
+    this.name = name
+    this.form = new Cell();
+    this.karma = 0;
+}
+
+
+
+Form.prototype.getLife = function() {
+    return this.life;
+};
+
+Form.prototype.getChoices = function() {
+    return this.choices;
+};
+
+
+
+Cell.prototype = new Form;
+Plant.prototype = new Form;
+
+
+function makeChoice(description, deltaKarma, deltaLife) {
+    return {
+        "description" : description,
+        "deltaKarma" : deltaKarma,
+        "deltaLife" : deltaLife
+    }
+}
+
+
+function display() {
+
+    player.life = player.form.getLife();
+    player.choices = player.form.getChoices();
+
+    $('#form').text(player.form.name);
+    $('#life').text(player.life);
+    $('#karma').text(player.karma);
+
+    $('#choices').html('');
+
+    for (i in player.choices) {
+        $('#choices').append(
+            '<li><a href="#" class="choice"' +
+            'data-deltaKarma=' + player.choices[i]['deltaKarma'] +
+            ' data-deltaLife=' + player.choices[i]['deltaLife'] +
+            '>' + player.choices[i]['description'] +
+            '</a></li>');
+    }
+
+    $('.choice').click(function (e) {
+        var deltaKarma = parseInt(
+            $(this).attr('data-deltaKarma'), 10);
+        var deltaLife = parseInt(
+            $(this).attr('data-deltaLife'), 10);
+
+        player.karma += deltaKarma;
+
+        player.life += deltaLife;
+
+        $('#life').text(player.life);
+        $('#karma').text(player.karma);
+
+        if (player.life == 0) {
+            reincarnate();
+        } 
+    });
+}
+
+
+function karmaToForm(karma) {
+    if (karma <= 5) {
+        return new Cell();
+    } else if (karma > 5) {
+        return new Plant();
+    }
+}
+
+
+function reincarnate() {
+    var new_form = karmaToForm(player.karma);
+    player.form = new_form;
+    display();
+}
+
+
+var name = "James"; //prompt("What is your name?");
+var player = new Player(name);
+
+$('#name').text(player.name);
+
+reincarnate();
+
+
 </script>
 
 </body>
