@@ -12,7 +12,11 @@
         color: #000;
     }
     a:hover {
-        color: #0000ff;
+        color: #00f;
+    }
+
+    ul {
+        list-style-type: none;
     }
     </style>
 </head>
@@ -20,46 +24,92 @@
 
 <div id="content">
 
-    <p>
-        <span id="greeting">Hello <span id="name"></span>.</span>
-        You are a <span id="form"></span>.
-    </p>
-    <p>What do you do?</p>
+    <p><span id="form_intro"></span></p>
+    <p><small><em><span id="form_description"></span></em></small></p>
+
+    <p>What will you do?</p>
     <ul id="choices"></ul>
+
+    <p><em><span id="outcome"></span></em></p>
+
     <p>Karma <span id="karma"></span></p>
     <p>Life <span id="life"></span></p>
+
+    <table id="items"></table>
 
 </div>
 
 <script type="text/javascript">
 
-function Form() {    
+function Form() {
+    this.items = {};
 }
 
 function Cell() {
-    this.name = "Cell"
+    this.intro = "You are a Cell.";
+    this.description = "The simplest of all organisms.";
     this.life = 10;
     this.choices = [
-        makeChoice("Eat vegetation",1, -1),
-        makeChoice("Eat other cell", -1, -1)
-    ]
+        makeChoice(
+            "Drift",
+            "You absorbed some glucose",
+            0.01, -1,
+            {
+                "Glucose" : 1
+            }),
+        makeChoice(
+            "Float",
+            "You absorbed some oxygen",
+            0.01, -1,
+            {
+                "Oxygen" : 1
+            }),
+        makeChoice(
+            "Waft",
+            "You produced ATP",
+            0.02, -1,
+            {
+                "Glucose" : -2,
+                "Oxygen" : -2,
+                "ATP" : 1
+            })
+    ];
 }
 
 function Plant() {
-    this.name = "Plant"
-    this.life = 20
+    this.intro = "You are a Plant.";
+    this.description = "Covered in leaves and bright flowers.";
+    this.life = 10;
     this.choices = [
-        makeChoice("Produce oxygen", 2, -1),
-        makeChoice("Produce neurotoxin",-5, -1)
-    ]
+        makeChoice(
+            "Sway",
+            "You produce some pollen",
+            1, -1,
+            {
+                "Pollen" : 1
+            }),
+        makeChoice(
+            "Look pretty",
+            "A bee lands on you and takes some pollen",
+            1, -1,
+            {
+                "Pollen" : -2
+            })
+    ];
+}
+
+function Dog() {
+    this.intro = "You are a Dog.";
+    this.description = "A small and furry friend.";
+    this.life = 20;
+    this.choices = [
+        
+    ];
 }
 
 function Player(name) {
-    this.name = name
-    this.form = new Cell();
-    this.karma = 0;
+    this.karma = 0.1;
 }
-
 
 
 Form.prototype.getLife = function() {
@@ -71,80 +121,160 @@ Form.prototype.getChoices = function() {
 };
 
 
-
 Cell.prototype = new Form;
 Plant.prototype = new Form;
+Dog.prototype = new Form;
 
 
-function makeChoice(description, deltaKarma, deltaLife) {
+function makeChoice(action, outcome, deltaKarma, deltaLife, deltaItems) {
     return {
-        "description" : description,
-        "deltaKarma" : deltaKarma,
-        "deltaLife" : deltaLife
+        action : action,
+        outcome : outcome,
+        deltaKarma : deltaKarma,
+        deltaLife : deltaLife,
+        deltaItems : deltaItems
     }
 }
 
 
-function display() {
+function newForm(karma) {
+    if (karma < 0.1) {
+        return new Cell();
+    } else if (karma < 10) {
+        return new Plant();
+    } else {
+        return new Dog();
+    }
+}
+
+function appendChoice(index, choice) {
+    $('#choices').append(
+        '<li><a href="#" class="choice" id=' + index + '>' + 
+        choice.action +
+        '</a></li>');
+}
+
+function reincarnate() {
+    player.form = newForm(player.karma);
 
     player.life = player.form.getLife();
     player.choices = player.form.getChoices();
 
-    $('#form').text(player.form.name);
+    $('#form_intro').text(player.form.intro);
+    $('#form_description').text(player.form.description);
+
     $('#life').text(player.life);
     $('#karma').text(player.karma);
 
-    $('#choices').html('');
+    var itemsOwned = {};
+    var hiddenChoices = {};
 
-    for (i in player.choices) {
-        $('#choices').append(
-            '<li><a href="#" class="choice"' +
-            'data-deltaKarma=' + player.choices[i]['deltaKarma'] +
-            ' data-deltaLife=' + player.choices[i]['deltaLife'] +
-            '>' + player.choices[i]['description'] +
-            '</a></li>');
+    for (var i in player.choices) {
+        var choice = player.choices[i];
+
+        var print = true;
+        var items = choice.deltaItems;
+        for (var item in items) {
+            if (items[item] < 0) {
+                print = false;
+            }
+        }
+
+        if (print) {
+            appendChoice(i, choice);
+        } else {
+            hiddenChoices[i] = choice;
+        }
     }
+    
+    $(document).on("click", ".choice", function (e) {
 
-    $('.choice').click(function (e) {
-        var deltaKarma = parseInt(
-            $(this).attr('data-deltaKarma'), 10);
-        var deltaLife = parseInt(
-            $(this).attr('data-deltaLife'), 10);
+        var choiceID = $(this).attr('id');
+        var choice = player.choices[choiceID];
 
-        player.karma += deltaKarma;
+        var outcome = choice.outcome;
+        var deltaKarma = choice.deltaKarma;
+        var deltaLife = choice.deltaLife;
+        var deltaItems = choice.deltaItems;
+
+        for (var item in deltaItems) {
+            if (itemsOwned.hasOwnProperty(item)) {
+                itemsOwned[item] += deltaItems[item];
+            } else {
+                itemsOwned[item] = deltaItems[item];
+            }
+        }
+        
+
+        for (var index in hiddenChoices) {
+            var choice = hiddenChoices[index];
+
+            var print = true;
+            var deltaItems = choice.deltaItems;
+
+            for (item in deltaItems) {
+                if (deltaItems[item] < 0) {
+                    if (itemsOwned.hasOwnProperty(item)) {
+                        if (itemsOwned[item] + deltaItems[item] < 0) {
+                            print = false
+                        }
+                    } else {
+                        print = false;
+                    }
+                }
+            }
+            if (print) {
+                appendChoice(index, choice);
+                delete hiddenChoices[index];
+            }
+        }
+
+        for (var i in player.choices) {
+            var choice = player.choices[i];
+            var deltaItems = choice.deltaItems;
+
+            for (item in deltaItems) {
+                if (itemsOwned.hasOwnProperty(item)) {
+                    if (itemsOwned[item] + deltaItems[item] < 0) {
+                        $('#' + i).remove();
+                        hiddenChoices[i] = choice;
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        $('#items').html('');
+
+        for (var item in itemsOwned) {
+            var amount = itemsOwned[item];
+            $('#items').append('<tr>' +
+                '<td class="item">' + item + '</td>' +
+                '<td>' + amount + '</td>' +
+                '</tr>');
+        }
+
+        player.karma = Math.round(
+            (player.karma + deltaKarma) * 100) / 100;
 
         player.life += deltaLife;
 
         $('#life').text(player.life);
         $('#karma').text(player.karma);
+        $('#outcome').text(outcome);
 
         if (player.life == 0) {
+            $('#choices').html('');
+            $('#items').html('');
+            $('#outcome').text(
+                'You have died and have been reincarnated.')
             reincarnate();
         } 
     });
 }
 
-
-function karmaToForm(karma) {
-    if (karma <= 5) {
-        return new Cell();
-    } else if (karma > 5) {
-        return new Plant();
-    }
-}
-
-
-function reincarnate() {
-    var new_form = karmaToForm(player.karma);
-    player.form = new_form;
-    display();
-}
-
-
-var name = "James"; //prompt("What is your name?");
-var player = new Player(name);
-
-$('#name').text(player.name);
+var player = new Player();
 
 reincarnate();
 
