@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TITLE</title>
+    <script
+        src="https://code.jquery.com/jquery-3.2.1.min.js"
+        integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+        crossorigin="anonymous"></script>
+    <style type="text/css">
+    a {
+        color: blue;
+        text-decoration: none;
+    }
+    a:hover {
+        color: black;
+    }
+
+    ul {
+        list-style-type: none;
+    }
+    </style>
+</head>
+<body>
+
+<div id="content">
+    <p><a href="">RELOAD</a></p>
+
+    <p><span id="form_intro"></span></p>
+    <p><small><em><span id="form_description"></span></em></small></p>
+
+    <p>What will you do?</p>
+    <ul id="choices"></ul>
+
+    <p><em><span id="outcome"></span></em></p>
+
+    <p>Karma <span id="karma"></span></p>
+    <p>Life <span id="life"></span></p>
+
+    <table id="items"></table>
+
+</div>
+
+<script type="text/javascript">
+
+function Form() {
+    this.items = {};
+}
+
+function Cell() {
+    this.intro = "You are a Cell.";
+    this.description = "The simplest of all organisms.";
+    this.life = 10;
+    this.choices = [
+        makeChoice(
+            "Drift",
+            "You absorbed some glucose",
+            0.01, -1,
+            {
+                "Glucose" : 1
+            }),
+        makeChoice(
+            "Float",
+            "You absorbed some oxygen",
+            0.01, -1,
+            {
+                "Oxygen" : 1
+            }),
+        makeChoice(
+            "Waft",
+            "You produced ATP",
+            0.02, -1,
+            {
+                "Glucose" : -2,
+                "Oxygen" : -2,
+                "ATP" : 1
+            })
+    ];
+}
+
+function Plant() {
+    this.intro = "You are a Plant.";
+    this.description = "Covered in leaves and bright flowers.";
+    this.life = 10;
+    this.choices = [
+        makeChoice(
+            "Sway",
+            "You produce some pollen",
+            0.4, -2,
+            {
+                "Pollen" : 1
+            }),
+        makeChoice(
+            "Look pretty",
+            "A bee lands on you and takes some pollen",
+            0.6, -1,
+            {
+                "Pollen" : -2
+            })
+    ];
+}
+
+function Rat() {
+    this.intro = "You are a Rat.";
+    this.description = "Commonly found in sewers and other dank places."
+    this.life = 10;
+    this.choices = [
+        makeChoice(
+            "Bite human",
+            "You gave the human rabies...",
+            -1, -1,
+            {}),
+        makeChoice(
+            "Scavange",
+            "You find some nice mouldy cheese.",
+            0.3, -1,
+            {
+                "Food" : 1
+            }),
+        makeChoice(
+            "Feed children",
+            "You share your food with your young.",
+            1.3, -1,
+            {
+                "Food" : -2
+            })
+    ];
+}
+
+function Cat() {
+    this.intro = "You are a Cat.";
+    this.description = "A cute and cuddly creature... with claws.";
+    this.life = 25;
+    this.choices = [
+        makeChoice(
+            "Bring owner a present",
+            "You killed a mouse and gave the corpse to your owner...",
+            -2, -1,
+            {
+                "Energy" : -2,
+                "Mouse" : 1
+            }),
+        makeChoice(
+            "Sleep",
+            "ZZZzzz...",
+            0.5, -1,
+            {
+                "Energy" : 1
+            }),
+        makeChoice(
+            "Meow",
+            "Your owner gives you a treat.",
+            0.3, -1,
+            {
+                "Treat" : 1
+            }),
+        makeChoice(
+            "Eat treat",
+            "You eat the treat. Yum!",
+            0.2, -1,
+            {
+                "Treat" : -1,
+                "Energy" : 1
+            }),
+        makeChoice(
+            "Eat mouse",
+            "You eat the mouse you killed",
+            -1, -1,
+            {
+                "Mouse" : -1,
+                "Energy" : 1
+            }),
+        makeChoice(
+            "Attack red monster",
+            "Your owners are having a fun time shining a red laser in front of you.",
+            1.2, -1,
+            {
+                "Energy" : -3
+            })
+    ];
+}
+
+function Dog() {
+    this.intro = "You are a Dog.";
+    this.description = "A small and furry friend.";
+    this.life = 30;
+    this.choices = [
+        makeChoice(
+            "Bark loudly",
+            "Your owners scold you!",
+            -1, -1,
+            {}),
+        makeChoice(
+            "Dig a hole",
+            "You found a bone! You also, ruined the back lawn...",
+            -1.3, -1,
+            {
+                "Bone" : 1
+            }),
+        makeChoice(
+            "Play with little creature",
+            "The creature was a rat with rabies! It bit you!",
+            -0.2, -8,
+            {}),
+        makeChoice(
+            "Chase flying orb",
+            "You return the ball to your owners hand.",
+            2.2, -1,
+            {}),
+        makeChoice(
+            "Rest head on owner",
+            "You've made your owners happy",
+            2.1, -1,
+            {})
+    ];
+}
+
+function Human() {
+    this.choices = [
+        makeChoice(
+            "Eat",
+            "You eat some food",
+            0.7, -1,
+            {
+                "Food" : -1
+            })
+    ];
+}
+
+function Slave() {
+    this.intro = "You are a Slave"
+    this.description = "You were born into slavery. All you have ever known is sadness."
+    this.life = 40
+    this.choices = this.choices.concat([
+        makeChoice(
+            "Work",
+            "You clean your masters clothes.",
+            0.8, -1,
+            {
+                "Tasks" : -1
+            }),
+        makeChoice(
+            "Work harder",
+            "You plow the masters fields.",
+            2.2, -3,
+            {
+                "Tasks" : -2
+            }),
+        makeChoice(
+            "Work hardest",
+            "You work until your arms shake",
+            3.5, -8,
+            {
+                "Tasks" : -3
+            }),
+        makeChoice(
+            "Speak",
+            "You are whipped by your master until your skin is caked with blood.",
+            0.3, -19,
+            {
+                "Scars" : 43
+            }),
+        makeChoice(
+            "Wait",
+            "You wait...",
+            0, -1,
+            {
+                "Patience" : 1,
+                "Tasks" : 1
+            }),
+        makeChoice(
+            "Sleep",
+            "You are awoken by a child pouring the remains of food and water on you.",
+            0.2, -2,
+            {
+                "Food" : 1
+            })
+    ]);
+}
+
+function HomelessPerson() {
+    this.intro = "You are homeless";
+    this.description = "You lost your home and you have no family or friends";
+    this.life = 100;
+    this.choices = this.choices.concat([
+        makeChoice(
+            "Beg",
+            "People ignore you mostly. You gained a bit of money.",
+            0.3, -1,
+            {
+                "Money" : 1
+            }),
+        makeChoice(
+            "Buy food",
+            "You buy a sandwich. It smells amazing.",
+            0.4, -1,
+            {
+                "Money" : -5,
+                "Food" : 1
+            }),
+        makeChoice(
+            "Buy suit",
+            "You have saved up enough to buy a suit.",
+            0.5, -1,
+            {
+                "Money" : -15,
+                "Suit" : 1
+            }),
+        makeChoice(
+            "Buy book",
+            "Ah, a book. Filled with information.",
+            0.7, -1,
+            {
+                "Book" : 1,
+                "Money" : -3
+            }),
+        makeChoice(
+            "Read book",
+            "You enjoy reading. It disctracts you from the cold.",
+            0.9, -1,
+            {
+                "Book" : -1,
+                "Knowledge" : 1
+            }),
+        makeChoice(
+            "Get job",
+            "",
+            0.9, -1,
+            {
+                "Suit" : -1,
+                "Knowledge" : -3,
+                "Money" : 25
+            }),
+        makeChoice(
+            "Buy home",
+            "You have enough money to buy a place to live. It's not the greatest place, but it's warm...",
+            3.5, -1,
+            {
+                "Money" : -100,
+                "Home" : 1
+            }),
+        makeChoice(
+            "Sleep",
+            "It's so cold outside...",
+            0.3, -4,
+            {})
+    ]);
+}
+
+function King() {
+    this.intro = "You are a king."
+    this.description = "Money and bitches, yo."
+    this.life = 1000000
+    this.choices = [
+        makeChoice(
+            "Nothing.",
+            "You're rich. you don't need to do anything...",
+            0, 0,
+            {
+                "Money" : 1000000
+            })
+    ]
+}
+
+function Player(name) {
+    this.karma = 0; //0.1;
+}
+
+
+Form.prototype.getLife = function() {
+    return this.life;
+};
+
+Form.prototype.getChoices = function() {
+    return this.choices;
+};
+
+
+Cell.prototype = new Form;
+Plant.prototype = new Form;
+Rat.prototype = new Form;
+Cat.prototype = new Form;
+Dog.prototype = new Form;
+
+Human.prototype = new Form;
+Slave.prototype = new Human;
+HomelessPerson.prototype = new Human;
+King.prototype = new Human;
+
+function makeChoice(action, outcome, deltaKarma, deltaLife, deltaItems) {
+    return {
+        action : action,
+        outcome : outcome,
+        deltaKarma : deltaKarma,
+        deltaLife : deltaLife,
+        deltaItems : deltaItems
+    }
+}
+
+
+function newForm(karma) {
+    if (karma < 0.2) {
+        return new Cell();
+    } else if (karma < 5) {
+        return new Plant();
+    } else if (karma < 15) {
+        return new Rat();
+    } else if (karma < 20) {
+        return new Cat();
+    } else if (karma < 25) {
+        return new Dog();
+    } else if (karma < 40) {
+        return new Slave();
+    } else if (karma < 70) {
+        return new HomelessPerson();
+    } else {
+        return new King();
+    }
+}
+
+function appendChoice(index, choice) {
+    $('#choices').append(
+        '<li><a href="#" class="choice" id=' + index + '>' + 
+        choice.action +
+        '</a></li>');
+}
+
+function render(e) {
+    var choiceID = $(this).attr('id');
+    var choice = player.choices[choiceID];
+
+    var outcome = choice.outcome;
+    var deltaKarma = choice.deltaKarma;
+    var deltaLife = choice.deltaLife;
+    var deltaItems = choice.deltaItems;
+
+    for (var item in deltaItems) {
+        if (itemsOwned.hasOwnProperty(item)) {
+            itemsOwned[item] += deltaItems[item];
+        } else {
+            itemsOwned[item] = deltaItems[item];
+        }
+    }
+    
+
+    for (var index in hiddenChoices) {
+        var choice = hiddenChoices[index];
+
+        var print = true;
+        var deltaItems = choice.deltaItems;
+
+        for (item in deltaItems) {
+            if (deltaItems[item] < 0) {
+                if (itemsOwned.hasOwnProperty(item)) {
+                    if (itemsOwned[item] + deltaItems[item] < 0) {
+                        print = false
+                    }
+                } else {
+                    print = false;
+                }
+            }
+        }
+        if (print) {
+            appendChoice(index, choice);
+            delete hiddenChoices[index];
+        }
+    }
+
+    for (var i in player.choices) {
+        var choice = player.choices[i];
+        var deltaItems = choice.deltaItems;
+
+        for (item in deltaItems) {
+            if (itemsOwned.hasOwnProperty(item)) {
+                if (itemsOwned[item] + deltaItems[item] < 0) {
+                    $('#' + i).remove();
+                    hiddenChoices[i] = choice;
+                    break;
+                }
+            }
+        }
+    }
+
+    $('#items').html('');
+
+    for (var item in itemsOwned) {
+        var amount = itemsOwned[item];
+        $('#items').append('<tr>' +
+            '<td class="item">' + item + '</td>' +
+            '<td>' + amount + '</td>' +
+            '</tr>');
+    }
+
+    player.karma = Math.round(
+        (player.karma + deltaKarma) * 100) / 100;
+
+    player.life += deltaLife;
+
+    $('#life').text(player.life);
+    $('#karma').text(player.karma);
+    $('#outcome').text(outcome);
+
+    if (player.life <= 0) {
+        $('#choices').html('');
+        $('#items').html('');
+        $('#outcome').text(
+            'You have died and have been reincarnated.')
+        reincarnate();
+    } 
+}
+
+function reincarnate() {
+    player.form = newForm(player.karma);
+
+    player.life = player.form.getLife();
+    player.choices = player.form.getChoices();
+
+    $('#form_intro').text(player.form.intro);
+    $('#form_description').text(player.form.description);
+
+    $('#life').text(player.life);
+    $('#karma').text(player.karma);
+
+    itemsOwned = {};
+    hiddenChoices = {};
+
+    for (var i in player.choices) {
+        var choice = player.choices[i];
+
+        var print = true;
+        var items = choice.deltaItems;
+        for (var item in items) {
+            if (items[item] < 0) {
+                print = false;
+            }
+        }
+
+        if (print) {
+            appendChoice(i, choice);
+        } else {
+            hiddenChoices[i] = choice;
+        }
+    }
+}
+
+var player = new Player();
+
+reincarnate();
+
+$(document).on("click", ".choice", render);
+
+</script>
+
+</body>
+</html>
